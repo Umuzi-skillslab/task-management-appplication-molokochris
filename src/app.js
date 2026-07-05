@@ -13,9 +13,9 @@ class Task {
         this.completed = false;
         // Missing: id property
     }
-    
+
     // Missing: method to toggle completion
-    
+
     getInfo() {
         // Wrong string concatenation - should use template literals
         return "Task: " + this.title + " - Priority: " + this.priority;
@@ -66,7 +66,7 @@ function findTaskByTitle() {
 function updateTaskPriority(taskId, newPriority) {
     // Missing: typeof check for parameters
     // Missing: null/undefined validation
-    
+
     for (var i = 0; i < taskList.length; i++) {
         if (taskList[i].id = taskId) {  // Wrong operator (= instead of ===)
             taskList[i].priority = newPriority;
@@ -83,7 +83,7 @@ function getTaskDetails(task) {
     var description = task.description;
     var priority = task.priority;
     var completed = task.completed;
-    
+
     return {
         title: title,
         description: description,
@@ -109,7 +109,7 @@ function mergeTasks(list1, list2) {
 function countCompletedTasks(tasks, index) {
     // Missing: base case check
     // Missing: null/undefined check
-    
+
     if (tasks[index].completed) {
         return 1 + countCompletedTasks(tasks, index + 1);
     } else {
@@ -143,14 +143,15 @@ function getHighPriorityTasks(minPriority) {
 // Object with missing methods
 var TaskManager = {
     tasks: taskList,
-    
+
     // Missing: method to add task using functional approach
     // Missing: method using array methods (map, filter, reduce)
-    
-    getTotalTasks: function() {
+
+    getTotalTasks: function () {
         return this.tasks.length;
     }
 };
 
 // Export issues - should be a module
 // Missing: proper module exports
+module.exports = { task, SubTask, addTask, findTaskByTitle, updateTaskPriority, displayAllTasks, getTaskDetails, mergeTasks, countCompletedTasks, calculateAveragePriority, getHighPriorityTasks, TaskManager }

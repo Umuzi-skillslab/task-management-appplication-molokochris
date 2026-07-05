@@ -1,6 +1,7 @@
 // Jest Tests - Starter Code with Errors and Missing Tests
 
 // Missing: proper imports/requires
+const { Task, SubTask, addTask, findTaskByTitle, updateTaskPriority, displayAllTasks, getTaskDetails, mergeTasks, countCompletedTasks, calculateAveragePriority, getHighPriorityTasks, TaskManager } = require('../src/app');
 
 describe('Task Class', () => {
     test('should create a task', () => {
@@ -8,20 +9,20 @@ describe('Task Class', () => {
         expect(task.title).toBe('Test Task');
         // Missing: other property checks
     });
-    
+
     // Missing: test for getInfo method
     // Missing: test for toggle completion
 });
 
 describe('Task Functions', () => {
     // Missing: beforeEach to reset taskList
-    
+
     test('should add task', () => {
         var task = addTask('New Task', 'Test', 2);
         // Wrong assertion - should check taskList
         expect(task).toBeDefined();
     });
-    
+
     // Missing: test for findTaskByTitle
     // Missing: test for updateTaskPriority
     // Missing: test for calculateAveragePriority
