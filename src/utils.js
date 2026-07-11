@@ -4,7 +4,9 @@
 
 // Priority labels, indexed 1-5 to match the <select> options in index.html.
 // index 0 is unused so priorityLabels[priority] reads naturally.
-export const priorityLabels = ["", "Low", "Medium", "High", "Very High", "Critical"];
+// Not exported: only getPriorityLabel() below needs it, so there's no
+// reason for it to be part of this module's public surface.
+const priorityLabels = ["", "Low", "Medium", "High", "Very High", "Critical"];
 
 /**
  * Map a numeric priority (1-5) to its human-readable label.
@@ -17,14 +19,22 @@ export function getPriorityLabel(priority) {
   return priorityLabels[priority] || "Unknown";
 }
 
+// Monotonically increasing counter, combined with a timestamp, so IDs are
+// guaranteed unique within a session — not just "probably" unique.
+// The previous version combined Date.now() with Math.random(), which had a
+// real (if small) collision risk for tasks created in the same millisecond;
+// a counter removes that risk entirely.
+let idCounter = 0;
+
 /**
- * Generate a unique-enough integer ID for a task.
- * Combines the current timestamp with a random offset so two tasks created
- * in the same millisecond still get different IDs.
+ * Generate a unique integer ID for a task: timestamp * 1000 + an
+ * incrementing counter, so two tasks created in the same millisecond still
+ * get strictly different IDs (no randomness, no collision risk).
  * @returns {number}
  */
-export function generateRandomId() {
-  return Date.now() + Math.floor(Math.random() * 1000);
+export function generateTaskId() {
+  idCounter += 1;
+  return Date.now() * 1000 + (idCounter % 1000);
 }
 
 /**
