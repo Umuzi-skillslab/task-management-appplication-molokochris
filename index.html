@@ -2,45 +2,62 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A simple task management app: add, prioritize, complete, and delete tasks.">
+  <title>Task Manager</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <div class="container">
-        <h1>Task Management System</h1>
+  <main class="container">
+    <h1>Task Management System</h1>
 
-        <div class="add-task-section">
-            <h2>Add New Task</h2>
-            <!-- Form with issues -->
-            <input type="text" id="title" placeholder="Task Title">
-            <input type="text" id="description" placeholder="Description">
-            <!-- Missing: priority input -->
-            <select id="priority">
-                <option value="1">Low (1)</option>
-                <option value="2">Medium (2)</option>
-                <option value="3">High (3)</option>
-                <option value="4">Very High (4)</option>
-                <option value="5">Critical (5)</option>
-            </select>
-            <button class="add-task-btn">Add Task</button>
+    <section class="add-task-section" aria-labelledby="add-task-heading">
+      <h2 id="add-task-heading">Add New Task</h2>
+
+      <form id="task-form" novalidate>
+        <div class="field">
+          <label for="title">Task title</label>
+          <input type="text" id="title" name="title" placeholder="e.g. Write the report" required autocomplete="off">
         </div>
 
-        <div class="task-list" id="task-list">
-            <!-- Tasks will be displayed here -->
+        <div class="field">
+          <label for="description">Description</label>
+          <input type="text" id="description" name="description" placeholder="Optional details" autocomplete="off">
         </div>
 
-        <div class="statistics" id="stats">
-            <!-- Missing: statistics display -->
+        <div class="field">
+          <label for="priority">Priority</label>
+          <select id="priority" name="priority">
+            <option value="1">Low (1)</option>
+            <option value="2">Medium (2)</option>
+            <option value="3">High (3)</option>
+            <option value="4">Very High (4)</option>
+            <option value="5">Critical (5)</option>
+          </select>
         </div>
-    </div>
 
-    <!-- app.js before dom.js -->
-    <script type="module" src="src/app.js"></script>
-    <script type="module" src="src/dom.js"></script>
-    <!-- Missing: module script -->
+        <button type="submit" id="add-task-btn" class="btn btn-primary" disabled>Add Task</button>
+      </form>
+    </section>
+
+    <section class="task-list-section" aria-labelledby="task-list-heading">
+      <div class="task-list-header">
+        <h2 id="task-list-heading">Tasks</h2>
+        <button type="button" id="clear-completed-btn" class="btn btn-secondary">Clear Completed</button>
+      </div>
+      <ul class="task-list" id="task-list">
+        <!-- Tasks are rendered here by src/dom.js -->
+      </ul>
+    </section>
+
+    <section class="statistics" id="stats" aria-live="polite" aria-atomic="true">
+      <!-- Stats are rendered here by src/dom.js -->
+    </section>
+  </main>
+
+  <script type="module" src="src/dom.js"></script>
 </body>
 
 </html>
