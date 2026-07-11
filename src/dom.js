@@ -3,7 +3,7 @@
 
 import { TaskManager, addTask } from "./app.js";
 import { saveToStorage, loadFromStorage } from "./storage.js";
-import { getPriorityLabel, escapeHTML } from "./utils.js";
+import { getPriorityLabel, escapeHTML, validateTasksArray, formatTaskName, isHighPriority } from "./utils.js";
 
 /**
  * Wire up every interactive element. Called once on DOMContentLoaded.
@@ -53,7 +53,7 @@ function handleAddTask(event) {
   const priorityInput = document.querySelector("#priority");
   if (!titleInput || !descInput || !priorityInput) return;
 
-  const title = titleInput.value.trim();
+  const title = formatTaskName(titleInput.value);
   const description = descInput.value.trim();
   const priority = parseInt(priorityInput.value, 10);
 
@@ -111,6 +111,7 @@ function displayTasks() {
 
   TaskManager.tasks.forEach((task) => {
     const completedClass = task.completed ? "completed" : "";
+    const highPriorityClass = isHighPriority(task) ? "high-priority" : "";
     const toggleLabel = task.completed ? "Mark incomplete" : "Mark complete";
     const safeTitle = escapeHTML(task.title);
     const safeDescription = escapeHTML(task.description);
@@ -118,10 +119,10 @@ function displayTasks() {
     container.insertAdjacentHTML(
       "beforeend",
       `
-      <li class="task ${completedClass}" data-id="${task.id}">
+      <li class="task ${completedClass} ${highPriorityClass}" data-id="${task.id}">
         <h3>${safeTitle}</h3>
         <p>${safeDescription}</p>
-        <span class="priority priority-${task.priority}">${getPriorityLabel(task.priority)}</span>
+        <span class="priority">${getPriorityLabel(task.priority)}</span>
         <div class="task-actions">
           <button
             type="button"
@@ -203,11 +204,16 @@ function handleClearCompleted() {
 
 /**
  * Load previously saved tasks from storage into TaskManager.
+ * Validates the saved data first — a corrupted or hand-edited localStorage
+ * entry (e.g. a task object missing its title) would otherwise crash
+ * silently partway through, or seed the list with unusable tasks.
  */
 function loadTasksFromStorage() {
   const saved = loadFromStorage();
-  if (saved && saved.length > 0) {
+  if (validateTasksArray(saved)) {
     saved.forEach((t) => addTask(t.title, t.description, t.priority));
+  } else if (saved.length > 0) {
+    console.error("Ignoring corrupted saved tasks in localStorage.");
   }
 }
 
