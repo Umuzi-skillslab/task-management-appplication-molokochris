@@ -1,51 +1,54 @@
-// Storage module - handles localStorage save/load with JSON serialization
+// storage.js — the single source of truth for persistence.
+// This is the only file that touches localStorage; utils.js only handles
+// plain JSON string conversion. Keeping them separate avoids the duplicate
+// save/load implementations the original codebase had in both files.
 
-// Guard for non-browser environments (e.g. Jest/Node)
-const isStorageAvailable = typeof localStorage !== "undefined"
+// Guard so this module can be imported in Jest/Node, where localStorage
+// doesn't exist, without throwing on load.
+const isStorageAvailable = typeof localStorage !== "undefined";
 
 /**
- * Save tasks array to localStorage as JSON string
- * @param {Array} tasks - array of task object to persist
+ * Save a tasks array to localStorage as a JSON string.
+ * @param {Array} tasks - array of task objects to persist
  */
-const saveToStorage = (tasks) => {
-    try {
-        if (typeof tasks !== 'object' || !Array.isArray(tasks)) {
-            throw new Error('saveToStorage: tasks must be an array')
-        }
-        if (isStorageAvailable) {
-            localStorage.setItem('tasks', JSON.stringify(tasks))
-        }
-    } catch (err) {
-        console.error('Failed to save tasks:', err.message)
+export function saveToStorage(tasks) {
+  try {
+    if (!Array.isArray(tasks)) {
+      throw new Error("saveToStorage: tasks must be an array");
     }
+    if (isStorageAvailable) {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+  } catch (err) {
+    console.error("Failed to save tasks:", err.message);
+  }
 }
 
 /**
- * Load tasks array from localStorage, parsing JSON string back to object
- * @returns {Array} parsed tasks array, or empty array if nothing stored
+ * Load the tasks array from localStorage, parsing the stored JSON string.
+ * @returns {Array} parsed tasks array, or [] if nothing stored or on error
  */
-const loadFromStorage = () => {
-    try {
-        if (!isStorageAvailable) return []
-        const data = localStorage.getItem('tasks')
-        return data ? JSON.parse(data) : []
-    } catch (err) {
-        console.error('Failed to load tasks:', err.message)
-        return []
-    }
+export function loadFromStorage() {
+  try {
+    if (!isStorageAvailable) return [];
+    const data = localStorage.getItem("tasks");
+    const parsed = data ? JSON.parse(data) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error("Failed to load tasks:", err.message);
+    return [];
+  }
 }
 
 /**
- * Clear all tasks from localStorage
+ * Remove all persisted tasks from localStorage.
  */
-const clearStorage = () => {
-    try {
-        if (isStorageAvailable) {
-            localStorage.removeItem('tasks')
-        }
-    } catch (err) {
-        console.error('Failed to clear storage:', err.message)
+export function clearStorage() {
+  try {
+    if (isStorageAvailable) {
+      localStorage.removeItem("tasks");
     }
+  } catch (err) {
+    console.error("Failed to clear storage:", err.message);
+  }
 }
-
-module.exports = { saveToStorage, loadFromStorage, clearStorage }
