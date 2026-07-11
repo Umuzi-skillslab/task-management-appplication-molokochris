@@ -39,7 +39,17 @@ npm test
 
 ## Screenshots
 
-*To be added before final submission:* app running, console with no errors, `npm test` output, and the task list after adding/completing/deleting a task.
+**Application running**
+![App running in browser](screenshots/app-running.png)
+
+**Console — no errors**
+![Console showing no errors](screenshots/console-no-errors.png)
+
+**Jest test results — 53 passed, 0 failed**
+![Jest test results, all passing](screenshots/tests-passing.png)
+
+**DOM manipulation — add / complete / undo / delete, live stats**
+![DOM manipulation features working](screenshots/dom-features.png)
 
 ## Reflection
 
