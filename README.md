@@ -4,7 +4,7 @@ A debugged, modernized task management app in vanilla JavaScript (ES6 modules). 
 
 ## Overview
 
-The starter code was ~60% complete: broken scoping, loop and operator bugs, missing OOP features, DOM errors, and two tests. This version has working add/complete/delete/clear-completed flows, localStorage persistence, and 42 passing Jest tests.
+The starter code was ~60% complete: broken scoping, loop and operator bugs, missing OOP features, DOM errors, and two tests. This version has working add/complete/delete/clear-completed flows, localStorage persistence with dedicated test coverage, and 53 passing Jest tests across two files.
 
 ## Errors Found (see `issues-identified.md` for the full list)
 
@@ -18,8 +18,9 @@ Covers Variables & Operators (implicit globals, `var`, `==`, assignment-in-condi
 - **DOM/UX:** the add-task section is a real `<form>` with `<label>`s, submits via a `submit` listener (`preventDefault` + native Enter-to-submit), disables its button until a title is entered, and tasks render as a semantic `<ul>`/`<li>` list.
 - **Accessibility:** `aria-live` stats region, `aria-pressed` on the complete button, descriptive `aria-label`s on complete/delete buttons naming the task.
 - **Security:** task title/description are HTML-escaped (`escapeHTML`) before being inserted via `insertAdjacentHTML`, closing a stored-XSS gap in the original code.
-- **Code quality:** removed a duplicate localStorage implementation (`storage.js` is now the single source of truth); `styles.css` rewritten with CSS custom properties and `.btn` modifier classes so selectors actually match the markup (they didn't before).
-- **Storage:** `JSON.stringify`/`JSON.parse` via `storage.js`, wired to every mutation (add/toggle/delete/clear).
+- **Code quality:** removed a duplicate localStorage implementation (`storage.js` is now the single source of truth, and checks `localStorage` availability at call time rather than caching it at import, so it's actually mockable in tests); `styles.css` rewritten from scratch — the original selectors (`#app`, `.task-form`, `.stats`) never matched the markup, so nothing had applied.
+- **Design:** an original "editorial minimal" visual identity (Fraunces serif headline, single amber accent, numbered task index, pull-quote stats) replacing the unstyled Bootstrap-blue starter look — CSS/markup only, no functional ids or JS logic changed.
+- **Storage:** `JSON.stringify`/`JSON.parse` via `storage.js`, wired to every mutation (add/toggle/delete/clear), with its own test file (`tests/storage.test.js`) using a mocked `localStorage`.
 
 ## Running the App
 
@@ -27,7 +28,6 @@ Covers Variables & Operators (implicit globals, `var`, `==`, assignment-in-condi
 npm install
 npx serve .
 ```
-
 Open the printed local URL. (ES6 modules require an HTTP server — opening `index.html` directly via `file://` will fail due to browser module CORS restrictions.)
 
 ## Running Tests
@@ -35,17 +35,15 @@ Open the printed local URL. (ES6 modules require an HTTP server — opening `ind
 ```bash
 npm test
 ```
-
-**Result: 42 passed, 0 failed.** Covers Task/SubTask creation and inheritance, all app.js functions (including the new `getFirstAndRestTasks` and `clearCompletedTasks`), recursion (incl. null/empty edge cases), destructuring/spread/rest, and utils.js helpers (`escapeHTML`, `validateTasksArray`, JSON round-tripping).
+**Result: 53 passed, 0 failed** across `tests/app.test.js` (Task/SubTask, all app.js functions including `getFirstAndRestTasks`/`clearCompletedTasks`, recursion edge cases, destructuring/spread/rest, utils.js helpers) and `tests/storage.test.js` (save/load/clear against a mocked `localStorage`, malformed-JSON handling, and the storage-unavailable fallback).
 
 ## Screenshots
 
-_To be added before final submission:_ app running, console with no errors, `npm test` output, and the task list after adding/completing/deleting a task.
+*To be added before final submission:* app running, console with no errors, `npm test` output, and the task list after adding/completing/deleting a task.
 
 ## Reflection
 
 The trickiest bug was `TaskManager.tasks` being assigned once at object creation instead of exposed as a getter — it silently never reflected new tasks. The ES6 module conversion was the largest structural change: it meant untangling which file owns which piece of state (e.g. consolidating the duplicate `storage.js`/`utils.js` localStorage code into one place) rather than just swapping keywords.
 
 ---
-
 **Author:** Moloko Chris Poopedi | Capstone 2
