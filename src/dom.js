@@ -221,9 +221,18 @@ function updateStats() {
 
   const summary = TaskManager.getSummary();
   statsContainer.innerHTML = `
-    <p>Total Tasks: ${summary.total}</p>
-    <p>Completed: ${summary.completed}</p>
-    <p>Average Priority: ${summary.averagePriority}</p>
+    <div class="stat">
+      <span class="stat-number">${summary.total}</span>
+      <span class="stat-label">Total</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">${summary.completed}</span>
+      <span class="stat-label">Completed</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">${summary.averagePriority}</span>
+      <span class="stat-label">Avg. Priority</span>
+    </div>
     `;
 }
 
