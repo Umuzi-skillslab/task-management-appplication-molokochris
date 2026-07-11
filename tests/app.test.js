@@ -27,6 +27,7 @@ import {
   tasksFromJSON,
   validateTasksArray,
   escapeHTML,
+  generateTaskId,
 } from "../src/utils.js";
 
 // Reset shared taskList state before every test so tests don't leak into
@@ -44,6 +45,17 @@ describe("Task class", () => {
     expect(task.priority).toBe(3);
     expect(task.completed).toBe(false);
     expect(task.id).toBeDefined();
+  });
+
+  test("two tasks created back-to-back always get different ids", () => {
+    // Regression test: the original id generator combined Date.now() with
+    // Math.random(), which had a real (if small) collision risk for tasks
+    // created in the same millisecond.
+    const ids = new Set();
+    for (let i = 0; i < 500; i++) {
+      ids.add(generateTaskId());
+    }
+    expect(ids.size).toBe(500);
   });
 
   test("getInfo returns a template-literal-formatted string", () => {
@@ -77,6 +89,19 @@ describe("SubTask inheritance", () => {
     const sub = new SubTask("Sub", "SubDesc", 1, parent);
     sub.toggleCompletion();
     expect(sub.completed).toBe(true);
+  });
+
+  test("SubTask overrides getInfo() to include the parent task's title", () => {
+    const parent = new Task("Write report", "Desc", 2);
+    const sub = new SubTask("Draft outline", "SubDesc", 1, parent);
+    expect(sub.getInfo()).toBe(
+      "Task: Draft outline - Priority: 1 (subtask of: Write report)",
+    );
+  });
+
+  test("SubTask.getInfo() handles a missing parentTask gracefully", () => {
+    const sub = new SubTask("Orphan", "Desc", 1, null);
+    expect(sub.getInfo()).toBe("Task: Orphan - Priority: 1 (subtask of: none)");
   });
 });
 

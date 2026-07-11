@@ -1,7 +1,9 @@
 // storage.js — the single source of truth for persistence.
-// This is the only file that touches localStorage; utils.js only handles
-// plain JSON string conversion. Keeping them separate avoids the duplicate
-// save/load implementations the original codebase had in both files.
+// This is the only file that touches localStorage. JSON conversion itself
+// is delegated to utils.js's tasksToJSON/tasksFromJSON, so there's exactly
+// one place in the codebase that knows how to serialize a tasks array.
+
+import { tasksToJSON, tasksFromJSON } from "./utils.js";
 
 /**
  * Check for localStorage at call time (not cached at module load).
@@ -24,7 +26,7 @@ export function saveToStorage(tasks) {
       throw new Error("saveToStorage: tasks must be an array");
     }
     if (isStorageAvailable()) {
-      localStorage.setItem("tasks", JSON.stringify(tasks));
+      localStorage.setItem("tasks", tasksToJSON(tasks));
     }
   } catch (err) {
     console.error("Failed to save tasks:", err.message);
@@ -39,8 +41,7 @@ export function loadFromStorage() {
   try {
     if (!isStorageAvailable()) return [];
     const data = localStorage.getItem("tasks");
-    const parsed = data ? JSON.parse(data) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    return data ? tasksFromJSON(data) : [];
   } catch (err) {
     console.error("Failed to load tasks:", err.message);
     return [];

@@ -2,12 +2,11 @@
 // functions that operate on the task list. No DOM code lives here; dom.js
 // is the only file that touches the document.
 
-import { generateRandomId } from "./utils.js";
+import { generateTaskId } from "./utils.js";
 
 // Module-level state. Exported as a live binding (see bottom of file) so
 // importers always see the current array, not a stale snapshot.
 let taskList = [];
-let taskCounter = 0;
 
 // --- Task class ---
 class Task {
@@ -16,7 +15,7 @@ class Task {
     this.description = description;
     this.priority = priority;
     this.completed = false;
-    this.id = generateRandomId();
+    this.id = generateTaskId();
   }
 
   /** Flip the completed flag on this task. */
@@ -35,6 +34,16 @@ class SubTask extends Task {
   constructor(title, description, priority, parentTask) {
     super(title, description, priority);
     this.parentTask = parentTask;
+  }
+
+  /**
+   * Override: same summary as Task.getInfo(), plus the parent task's
+   * title for context. Calls super.getInfo() rather than duplicating the
+   * base format, so the two stay in sync if that format ever changes.
+   */
+  getInfo() {
+    const parentTitle = this.parentTask ? this.parentTask.title : "none";
+    return `${super.getInfo()} (subtask of: ${parentTitle})`;
   }
 }
 
@@ -55,7 +64,6 @@ function addTask(title, description, priority) {
     }
     const newTask = new Task(title, description, priority);
     taskList.push(newTask);
-    taskCounter++;
     return newTask;
   } catch (error) {
     console.error("Failed to add task:", error.message);

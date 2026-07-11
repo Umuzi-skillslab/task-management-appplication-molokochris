@@ -287,6 +287,11 @@ input[aria-invalid="true"] {
   opacity: 0.5;
 }
 
+.task.high-priority:not(.completed) {
+  border-left: 2px solid var(--color-danger);
+  padding-left: calc(var(--space-md) - 2px);
+}
+
 .task.completed h3 {
   text-decoration: line-through;
   text-decoration-color: var(--color-muted);
