@@ -3,9 +3,16 @@
 // plain JSON string conversion. Keeping them separate avoids the duplicate
 // save/load implementations the original codebase had in both files.
 
-// Guard so this module can be imported in Jest/Node, where localStorage
-// doesn't exist, without throwing on load.
-const isStorageAvailable = typeof localStorage !== "undefined";
+/**
+ * Check for localStorage at call time (not cached at module load).
+ * Caching this in a module-level constant would mean a test-time mock of
+ * localStorage set up after this module is imported would never be seen —
+ * checking live keeps the module honest and testable.
+ * @returns {boolean}
+ */
+function isStorageAvailable() {
+  return typeof localStorage !== "undefined";
+}
 
 /**
  * Save a tasks array to localStorage as a JSON string.
@@ -16,7 +23,7 @@ export function saveToStorage(tasks) {
     if (!Array.isArray(tasks)) {
       throw new Error("saveToStorage: tasks must be an array");
     }
-    if (isStorageAvailable) {
+    if (isStorageAvailable()) {
       localStorage.setItem("tasks", JSON.stringify(tasks));
     }
   } catch (err) {
@@ -30,7 +37,7 @@ export function saveToStorage(tasks) {
  */
 export function loadFromStorage() {
   try {
-    if (!isStorageAvailable) return [];
+    if (!isStorageAvailable()) return [];
     const data = localStorage.getItem("tasks");
     const parsed = data ? JSON.parse(data) : [];
     return Array.isArray(parsed) ? parsed : [];
@@ -45,7 +52,7 @@ export function loadFromStorage() {
  */
 export function clearStorage() {
   try {
-    if (isStorageAvailable) {
+    if (isStorageAvailable()) {
       localStorage.removeItem("tasks");
     }
   } catch (err) {
