@@ -18,6 +18,7 @@
       <p class="eyebrow">Task Management — Field Build</p>
       <h1>Task Manager</h1>
       <p class="dek">Add it, prioritize it, cross it off.</p>
+      <p class="up-next" id="up-next" aria-live="polite"></p>
     </header>
 
     <section class="add-task-section" aria-labelledby="add-task-heading">
@@ -34,15 +35,24 @@
           <input type="text" id="description" name="description" placeholder="Optional details" autocomplete="off">
         </div>
 
-        <div class="field field-priority">
-          <label for="priority">Priority</label>
-          <select id="priority" name="priority">
-            <option value="1">Low (1)</option>
-            <option value="2">Medium (2)</option>
-            <option value="3">High (3)</option>
-            <option value="4">Very High (4)</option>
-            <option value="5">Critical (5)</option>
-          </select>
+        <div class="field-row">
+          <div class="field field-priority">
+            <label for="priority">Priority</label>
+            <select id="priority" name="priority">
+              <option value="1">Low (1)</option>
+              <option value="2">Medium (2)</option>
+              <option value="3">High (3)</option>
+              <option value="4">Very High (4)</option>
+              <option value="5">Critical (5)</option>
+            </select>
+          </div>
+
+          <div class="field field-parent">
+            <label for="parent-task">Parent task (optional)</label>
+            <select id="parent-task" name="parent-task">
+              <option value="">None — top-level task</option>
+            </select>
+          </div>
         </div>
 
         <button type="submit" id="add-task-btn" class="btn btn-primary" disabled>Add Task</button>
@@ -52,7 +62,14 @@
     <section class="task-list-section" aria-labelledby="task-list-heading">
       <div class="task-list-header">
         <h2 id="task-list-heading" class="section-label">Tasks</h2>
-        <button type="button" id="clear-completed-btn" class="btn-text">Clear completed</button>
+        <div class="task-list-actions">
+          <label class="filter-toggle">
+            <input type="checkbox" id="priority-filter-toggle">
+            High priority only
+          </label>
+          <button type="button" id="restore-archived-btn" class="btn-text" hidden>Restore cleared</button>
+          <button type="button" id="clear-completed-btn" class="btn-text">Clear completed</button>
+        </div>
       </div>
       <ul class="task-list" id="task-list">
         <!-- Tasks are rendered here by src/dom.js -->
@@ -61,6 +78,25 @@
 
     <section class="statistics" id="stats" aria-live="polite" aria-atomic="true">
       <!-- Stats are rendered here by src/dom.js -->
+    </section>
+
+    <section class="tools-section" aria-labelledby="tools-heading">
+      <h2 id="tools-heading" class="section-label">Manage Data</h2>
+
+      <form id="find-form" class="tools-row">
+        <div class="field field-inline">
+          <label for="find-title">Find a task by exact title</label>
+          <input type="text" id="find-title" name="find-title" placeholder="e.g. Write the report" autocomplete="off">
+        </div>
+        <button type="submit" class="btn-text">Find</button>
+      </form>
+      <p class="find-result" id="find-result" aria-live="polite"></p>
+
+      <div class="tools-row">
+        <button type="button" id="import-btn" class="btn-text">Import tasks (JSON)</button>
+        <input type="file" id="import-input" accept="application/json" hidden>
+        <button type="button" id="clear-all-btn" class="btn-text btn-danger">Clear all data</button>
+      </div>
     </section>
   </main>
 

@@ -75,6 +75,14 @@ body {
   font-style: italic;
   font-size: 1.05rem;
   color: var(--color-ink-soft);
+  margin: 0 0 var(--space-xs);
+}
+
+.up-next {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-accent-ink);
   margin: 0;
 }
 
@@ -86,6 +94,18 @@ body {
   text-transform: uppercase;
   color: var(--color-muted);
   margin: 0 0 var(--space-sm);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+@media (max-width: 480px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* --- Add task form: underlined fields, no boxes --- */
@@ -220,11 +240,35 @@ input[aria-invalid="true"] {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
   margin-bottom: var(--space-sm);
 }
 
 .task-list-header .section-label {
   margin-bottom: 0;
+}
+
+.task-list-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+
+.filter-toggle input {
+  width: auto;
+  cursor: pointer;
 }
 
 .task-list {
@@ -273,14 +317,41 @@ input[aria-invalid="true"] {
 .task .priority {
   grid-column: 2;
   display: inline-block;
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-accent-ink);
+  background: none;
+  border: none;
   border-bottom: 2px solid var(--color-accent);
-  padding-bottom: 1px;
+  padding: 0 0 1px;
   width: fit-content;
+  cursor: pointer;
+}
+
+.task .priority:hover {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-ink);
+}
+
+.task .priority:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.subtask-note {
+  grid-column: 2;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--color-muted);
+  margin: -2px 0 6px;
+}
+
+.task.just-found {
+  background-color: #fbf0d9;
+  transition: background-color 0.3s ease-in-out;
 }
 
 .task.completed {
@@ -299,7 +370,7 @@ input[aria-invalid="true"] {
 
 .task-actions {
   grid-column: 3;
-  grid-row: 1 / span 3;
+  grid-row: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -344,6 +415,41 @@ input[aria-invalid="true"] {
   margin-top: 4px;
 }
 
+/* --- Tools section: find/import/clear-all --- */
+.tools-section {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1.5px solid var(--color-rule-soft);
+}
+
+.tools-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+}
+
+.field-inline {
+  flex: 1 1 220px;
+  margin-bottom: 0;
+}
+
+.find-result {
+  font-size: 0.85rem;
+  color: var(--color-ink-soft);
+  min-height: 1.2em;
+  margin: 0 0 var(--space-md);
+}
+
+.btn-danger {
+  color: var(--color-danger);
+}
+
+.btn-danger:hover {
+  border-bottom-color: var(--color-danger);
+}
+
 /* --- Small screens --- */
 @media (max-width: 480px) {
   body {
@@ -363,5 +469,10 @@ input[aria-invalid="true"] {
 
   .statistics {
     gap: var(--space-md);
+  }
+
+  .tools-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

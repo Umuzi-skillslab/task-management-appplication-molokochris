@@ -6,15 +6,20 @@ import {
   Task,
   SubTask,
   addTask,
+  addSubtask,
   findTaskByTitle,
   updateTaskPriority,
+  cycleTaskPriority,
   getTaskDetails,
   mergeTasks,
   getFirstAndRestTasks,
+  getPendingQueue,
   countCompletedTasks,
   calculateAveragePriority,
   getHighPriorityTasks,
   clearCompletedTasks,
+  restoreArchivedTasks,
+  resetAllTasks,
   createTaskFilter,
   createTasks,
   TaskManager,
@@ -30,9 +35,12 @@ import {
   generateTaskId,
 } from "../src/utils.js";
 
-// Reset shared taskList state before every test so tests don't leak into
-// each other regardless of run order.
+// Reset shared taskList AND archivedTasks state before every test so tests
+// don't leak into each other regardless of run order. archivedTasks isn't
+// exported directly (encapsulated in app.js), so it's drained back into
+// taskList via the public restoreArchived() API before both are cleared.
 beforeEach(() => {
+  TaskManager.restoreArchived();
   taskList.length = 0;
   jest.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -122,6 +130,42 @@ describe("addTask", () => {
   });
 });
 
+describe("addSubtask", () => {
+  test("creates a SubTask linked to an existing parent", () => {
+    const parent = addTask("Parent task", "desc", 3);
+    const sub = addSubtask("Child task", "desc", 1, parent.id);
+    expect(sub).toBeInstanceOf(SubTask);
+    expect(sub.parentTask).toBe(parent);
+    expect(taskList).toContain(sub);
+  });
+
+  test("returns null if the parent id doesn't exist", () => {
+    expect(addSubtask("Orphan", "desc", 1, 999999)).toBeNull();
+  });
+
+  test("returns null for an empty title, same as addTask", () => {
+    const parent = addTask("Parent", "desc", 2);
+    expect(addSubtask("", "desc", 1, parent.id)).toBeNull();
+  });
+});
+
+describe("cycleTaskPriority", () => {
+  test("increments priority by one", () => {
+    const task = addTask("Cycle me", "desc", 2);
+    expect(cycleTaskPriority(task.id)).toBe(true);
+    expect(task.priority).toBe(3);
+  });
+
+  test("wraps from 5 back to 1", () => {
+    const task = addTask("Cycle me", "desc", 5);
+    cycleTaskPriority(task.id);
+    expect(task.priority).toBe(1);
+  });
+
+  test("returns false for a non-existent task id", () => {
+    expect(cycleTaskPriority(999999)).toBe(false);
+  });
+});
 describe("findTaskByTitle", () => {
   test("returns the task with a matching title", () => {
     addTask("FindMe", "desc", 1);
@@ -192,6 +236,74 @@ describe("array operations", () => {
   });
 });
 
+describe("getPendingQueue", () => {
+  test("returns the first incomplete task and how many are behind it", () => {
+    const a = addTask("A", "", 1);
+    const b = addTask("B", "", 2);
+    const c = addTask("C", "", 3);
+    a.toggleCompletion();
+    const { first, rest } = getPendingQueue();
+    expect(first).toBe(b);
+    expect(rest).toEqual([c]);
+  });
+
+  test("returns undefined first when every task is completed", () => {
+    const a = addTask("A", "", 1);
+    a.toggleCompletion();
+    const { first, rest } = getPendingQueue();
+    expect(first).toBeUndefined();
+    expect(rest).toEqual([]);
+  });
+
+  test("returns undefined first when there are no tasks at all", () => {
+    const { first, rest } = getPendingQueue();
+    expect(first).toBeUndefined();
+    expect(rest).toEqual([]);
+  });
+});
+
+describe("archive / restore (clearCompletedTasks + restoreArchivedTasks)", () => {
+  test("restoreArchivedTasks brings back exactly what was cleared", () => {
+    const a = addTask("A", "", 1);
+    const b = addTask("B", "", 2);
+    a.toggleCompletion();
+    clearCompletedTasks();
+    expect(taskList).toEqual([b]);
+
+    const restoredCount = restoreArchivedTasks();
+    expect(restoredCount).toBe(1);
+    expect(taskList).toContain(a);
+    expect(taskList).toContain(b);
+    expect(taskList).toHaveLength(2);
+  });
+
+  test("restoring twice in a row is a no-op the second time", () => {
+    const a = addTask("A", "", 1);
+    a.toggleCompletion();
+    clearCompletedTasks();
+    restoreArchivedTasks();
+    expect(restoreArchivedTasks()).toBe(0);
+  });
+
+  test("restoring with nothing archived returns 0 and changes nothing", () => {
+    addTask("A", "", 1);
+    expect(restoreArchivedTasks()).toBe(0);
+    expect(taskList).toHaveLength(1);
+  });
+});
+
+describe("resetAllTasks", () => {
+  test("empties both the active list and the archive", () => {
+    const a = addTask("A", "", 1);
+    addTask("B", "", 2);
+    a.toggleCompletion();
+    clearCompletedTasks();
+    resetAllTasks();
+    expect(taskList).toHaveLength(0);
+    expect(TaskManager.getArchivedCount()).toBe(0);
+  });
+});
+
 describe("recursion: countCompletedTasks", () => {
   test("counts completed tasks recursively", () => {
     const tasks = [new Task("A", "", 1), new Task("B", "", 2), new Task("C", "", 3)];
@@ -242,6 +354,38 @@ describe("rest parameter: createTasks", () => {
     expect(results).toHaveLength(3);
     expect(results.every((t) => t instanceof Task)).toBe(true);
     expect(taskList).toHaveLength(3);
+  });
+
+  test("rejects the whole batch if any item is missing a title", () => {
+    const results = createTasks(
+      { title: "Valid", description: "", priority: 1 },
+      { title: "", description: "", priority: 2 },
+    );
+    expect(results).toEqual([]);
+    expect(taskList).toHaveLength(0);
+  });
+});
+
+describe("TaskManager: new facade methods", () => {
+  test("getHighPriorityTasks delegates to the standalone function", () => {
+    addTask("Low", "", 1);
+    addTask("High", "", 5);
+    expect(TaskManager.getHighPriorityTasks(3)).toHaveLength(1);
+  });
+
+  test("getPendingQueue delegates to the standalone function", () => {
+    const a = addTask("A", "", 1);
+    a.toggleCompletion();
+    addTask("B", "", 2);
+    expect(TaskManager.getPendingQueue().first.title).toBe("B");
+  });
+
+  test("getArchivedCount reflects cleared-but-not-restored tasks", () => {
+    const a = addTask("A", "", 1);
+    a.toggleCompletion();
+    expect(TaskManager.getArchivedCount()).toBe(0);
+    TaskManager.clearCompleted();
+    expect(TaskManager.getArchivedCount()).toBe(1);
   });
 });
 

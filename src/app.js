@@ -2,11 +2,15 @@
 // functions that operate on the task list. No DOM code lives here; dom.js
 // is the only file that touches the document.
 
-import { generateTaskId } from "./utils.js";
+import { generateTaskId, validateTasksArray } from "./utils.js";
 
 // Module-level state. Exported as a live binding (see bottom of file) so
 // importers always see the current array, not a stale snapshot.
 let taskList = [];
+
+// Tasks removed by clearCompletedTasks() land here instead of vanishing,
+// so restoreArchivedTasks() can bring them back. Cleared on restore.
+let archivedTasks = [];
 
 // --- Task class ---
 class Task {
@@ -72,7 +76,38 @@ function addTask(title, description, priority) {
 }
 
 /**
- * Log every task's title to the console.
+ * Create a SubTask under an existing task and add it to the task list.
+ * @param {string} title
+ * @param {string} description
+ * @param {number} priority
+ * @param {number} parentId - id of the task this is a subtask of
+ * @returns {SubTask|null} the created subtask, or null if the parent
+ *   doesn't exist or validation fails
+ */
+function addSubtask(title, description, priority, parentId) {
+  try {
+    if (!title || typeof title !== "string") {
+      throw new Error("Title must be a non-empty string");
+    }
+    if (typeof priority !== "number") {
+      throw new Error("Priority must be a number");
+    }
+    const parent = taskList.find((t) => t.id === parentId);
+    if (!parent) {
+      throw new Error(`No task found with id ${parentId} to attach subtask to`);
+    }
+    const subtask = new SubTask(title, description, priority, parent);
+    taskList.push(subtask);
+    return subtask;
+  } catch (error) {
+    console.error("Failed to add subtask:", error.message);
+    return null;
+  }
+}
+
+/**
+ * Log every task's title to the console. A debug helper, not a UI
+ * renderer — kept console-only on purpose, matching its original role.
  * @param {Task[]} tasks
  */
 function displayAllTasks(tasks) {
@@ -115,6 +150,20 @@ function updateTaskPriority(taskId, newPriority) {
 }
 
 /**
+ * Cycle a task's priority up by one step, wrapping from 5 back to 1.
+ * Thin wrapper around updateTaskPriority for the "click to bump priority"
+ * UI interaction.
+ * @param {number} taskId
+ * @returns {boolean|null} same contract as updateTaskPriority
+ */
+function cycleTaskPriority(taskId) {
+  const task = taskList.find((t) => t.id === taskId);
+  if (!task) return false;
+  const next = task.priority >= 5 ? 1 : task.priority + 1;
+  return updateTaskPriority(taskId, next);
+}
+
+/**
  * Pull the display-relevant fields off a task via object destructuring.
  * @param {Task} task
  * @returns {{title: string, description: string, priority: number, completed: boolean}}
@@ -136,8 +185,7 @@ function mergeTasks(list1, list2) {
 
 /**
  * Split a task list into its first item and the rest, via array
- * destructuring + rest syntax. Useful for "process the next task" style
- * queue logic without mutating the original array.
+ * destructuring + rest syntax.
  * @param {Task[]} tasks
  * @returns {{first: Task|undefined, rest: Task[]}}
  */
@@ -147,6 +195,17 @@ function getFirstAndRestTasks(tasks) {
   }
   const [first, ...rest] = tasks;
   return { first, rest };
+}
+
+/**
+ * The next pending (incomplete) task, plus how many others are waiting —
+ * powers the "Up Next" teaser in the UI. Built on getFirstAndRestTasks
+ * rather than reimplementing the same split.
+ * @returns {{first: Task|undefined, rest: Task[]}}
+ */
+function getPendingQueue() {
+  const pending = taskList.filter((task) => !task.completed);
+  return getFirstAndRestTasks(pending);
 }
 
 /**
@@ -176,18 +235,29 @@ function calculateAveragePriority() {
 }
 
 /**
+ * Higher-order function: returns the subset of taskList matching a
+ * caller-supplied predicate function.
+ * @param {(task: Task) => boolean} predicate
+ * @returns {Task[]}
+ */
+const createTaskFilter = (predicate) => {
+  return taskList.filter(predicate);
+};
+
+/**
  * All tasks with a priority strictly above minPriority.
+ * Built on createTaskFilter rather than a second, duplicate .filter() call.
  * @param {number} minPriority
  * @returns {Task[]}
  */
 function getHighPriorityTasks(minPriority) {
-  return taskList.filter((task) => task.priority > minPriority);
+  return createTaskFilter((task) => task.priority > minPriority);
 }
 
 /**
  * Remove every completed task from the list in place (so the exported
- * taskList binding and any existing references stay valid) and return the
- * removed tasks.
+ * taskList binding and any existing references stay valid), archive them,
+ * and return the removed tasks.
  * @returns {Task[]} the tasks that were removed
  */
 function clearCompletedTasks() {
@@ -195,7 +265,48 @@ function clearCompletedTasks() {
   for (let i = taskList.length - 1; i >= 0; i--) {
     if (taskList[i].completed) taskList.splice(i, 1);
   }
+  archivedTasks.push(...removed);
   return removed;
+}
+
+/**
+ * Bring every archived (previously cleared) task back into the active
+ * list, using mergeTasks to combine the two arrays. Undo for
+ * clearCompletedTasks().
+ * @returns {number} how many tasks were restored
+ */
+function restoreArchivedTasks() {
+  const restoredCount = archivedTasks.length;
+  const merged = mergeTasks(taskList, archivedTasks);
+  taskList.length = 0;
+  taskList.push(...merged);
+  archivedTasks = [];
+  return restoredCount;
+}
+
+/**
+ * Remove every task, active and archived. Used by the "Clear All Data"
+ * action; storage.js's clearStorage() handles wiping localStorage
+ * separately, since this module doesn't know about persistence.
+ */
+function resetAllTasks() {
+  taskList.length = 0;
+  archivedTasks = [];
+}
+
+/**
+ * Create several tasks at once from an arbitrary number of task-data
+ * objects, using a rest parameter. Validates the batch first so a
+ * malformed import (e.g. from importTasksFromJSON in dom.js) doesn't
+ * partially apply.
+ * @param {...{title: string, description: string, priority: number}} taskDataArray
+ * @returns {Array<Task|null>}
+ */
+function createTasks(...taskDataArray) {
+  if (!validateTasksArray(taskDataArray)) return [];
+  return taskDataArray.map(({ title, description, priority }) =>
+    addTask(title, description, priority),
+  );
 }
 
 // TaskManager: a small facade over taskList with derived/aggregate views.
@@ -211,7 +322,7 @@ const TaskManager = {
   getSummary() {
     return {
       total: taskList.length,
-      completed: this.getCompletedTasks().length,
+      completed: countCompletedTasks(taskList, 0),
       averagePriority: calculateAveragePriority(),
     };
   },
@@ -220,48 +331,51 @@ const TaskManager = {
     return this.tasks.length;
   },
 
+  getHighPriorityTasks(minPriority) {
+    return getHighPriorityTasks(minPriority);
+  },
+
+  getPendingQueue() {
+    return getPendingQueue();
+  },
+
   clearCompleted() {
     return clearCompletedTasks();
   },
-};
 
-/**
- * Higher-order function: returns the subset of taskList matching a
- * caller-supplied predicate function.
- * @param {(task: Task) => boolean} predicate
- * @returns {Task[]}
- */
-const createTaskFilter = (predicate) => {
-  return taskList.filter(predicate);
-};
+  getArchivedCount() {
+    return archivedTasks.length;
+  },
 
-/**
- * Create several tasks at once from an arbitrary number of task-data
- * objects, using a rest parameter.
- * @param {...{title: string, description: string, priority: number}} taskDataArray
- * @returns {Array<Task|null>}
- */
-function createTasks(...taskDataArray) {
-  return taskDataArray.map(({ title, description, priority }) =>
-    addTask(title, description, priority),
-  );
-}
+  restoreArchived() {
+    return restoreArchivedTasks();
+  },
+
+  resetAll() {
+    resetAllTasks();
+  },
+};
 
 export {
   taskList,
   Task,
   SubTask,
   addTask,
+  addSubtask,
   findTaskByTitle,
   updateTaskPriority,
+  cycleTaskPriority,
   displayAllTasks,
   getTaskDetails,
   mergeTasks,
   getFirstAndRestTasks,
+  getPendingQueue,
   countCompletedTasks,
   calculateAveragePriority,
   getHighPriorityTasks,
   clearCompletedTasks,
+  restoreArchivedTasks,
+  resetAllTasks,
   createTaskFilter,
   createTasks,
   TaskManager,
