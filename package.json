@@ -1,15 +1,24 @@
 {
   "name": "task-manager-starter",
   "version": "1.0.0",
-  "description": "Task Management Application - Starter Code",
-  "main": "app.js",
+  "description": "Task Management Application - Capstone 2",
+  "main": "src/app.js",
+  "type": "commonjs",
   "scripts": {
     "test": "jest"
   },
   "keywords": ["tasks", "javascript"],
-  "author": "",
+  "author": "Moloko Chris Poopedi",
   "license": "ISC",
+  "jest": {
+    "testMatch": ["**/tests/**/*.test.js"]
+  },
+  "babel": {
+    "presets": [["@babel/preset-env", { "targets": { "node": "current" } }]]
+  },
   "devDependencies": {
-    "jest": "^29.0.0"
+    "@babel/preset-env": "^7.0.0",
+    "jest": "^29.0.0",
+    "babel-jest": "^29.0.0"
   }
 }
